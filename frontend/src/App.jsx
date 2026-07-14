@@ -37,6 +37,8 @@ export default function App() {
   
   const [currentTab, setCurrentTab] = useState("dashboard");
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [takenReminders, setTakenReminders] = useState({});
+  const [loadingData, setLoadingData] = useState(false);
   const [alert, setAlert] = useState(null);
   
   // Auth Form states
@@ -264,8 +266,24 @@ export default function App() {
     }
   };
 
+  const handleMarkTaken = (id) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setTakenReminders(prev => ({ ...prev, [id]: timeStr }));
+    showAlert("success", "Excellent! You checked off this dose. Keep it up!");
+  };
+
+  const SkeletonCard = () => (
+    <div className="card">
+      <div className="skeleton-title skeleton-line"></div>
+      <div className="skeleton-line" style={{ width: "80%" }}></div>
+      <div className="skeleton-line" style={{ width: "40%" }}></div>
+      <div className="skeleton-line" style={{ width: "60%" }}></div>
+    </div>
+  );
+
   // Patient API Calls
   const fetchDoctors = async (spec = "") => {
+    setLoadingData(true);
     try {
       const url = spec ? `${API_BASE}/api/patient/doctors?specialisation=${spec}` : `${API_BASE}/api/patient/doctors`;
       const response = await fetch(url, {
@@ -276,6 +294,8 @@ export default function App() {
       setDoctorsList(data);
     } catch (err) {
       showAlert("danger", err.message);
+    } finally {
+      setLoadingData(false);
     }
   };
 
@@ -343,6 +363,16 @@ export default function App() {
       setActiveHold(data);
       showAlert("info", `Slot locked! Complete details below within 5 minutes to confirm booking.`);
       fetchSlots(selectedDoctor.id, selectedDate);
+
+      // Smooth scroll to details form and focus symptom input
+      setTimeout(() => {
+        const formEl = document.getElementById("booking-details-form");
+        if (formEl) {
+          formEl.scrollIntoView({ behavior: "smooth" });
+          const textEl = formEl.querySelector("textarea");
+          if (textEl) textEl.focus();
+        }
+      }, 300);
     } catch (err) {
       showAlert("danger", err.message);
     }
@@ -823,23 +853,60 @@ export default function App() {
                 No active medication reminders. Reminders are generated automatically when a doctor submits prescriptions.
               </div>
             ) : (
-              <div className="grid-3">
-                {patientReminders.map((rem) => (
-                  <div key={rem.id} className="card" style={{ borderLeft: "4px solid var(--accent)" }}>
-                    <div className="card-title">
-                      <h3>{rem.medication_name}</h3>
-                      <span className="prescription-tag">ACTIVE</span>
+              <div className="grid-3 animate-fade-in">
+                {patientReminders.map((rem) => {
+                  const isTaken = !!takenReminders[rem.id];
+                  return (
+                    <div 
+                      key={rem.id} 
+                      className={`card ${isTaken ? "card-completed-pulse" : ""}`} 
+                      style={{ 
+                        borderLeft: isTaken ? "4px solid var(--success)" : "4px solid var(--accent)",
+                        opacity: isTaken ? 0.85 : 1
+                      }}
+                    >
+                      <div className="card-title">
+                        <h3>{rem.medication_name}</h3>
+                        <span 
+                          className="prescription-tag" 
+                          style={{ 
+                            backgroundColor: isTaken ? "var(--success-light)" : "#f3e8ff", 
+                            color: isTaken ? "var(--success)" : "#6b21a8" 
+                          }}
+                        >
+                          {isTaken ? "TAKEN TODAY" : "ACTIVE"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "14px", marginBottom: "12px" }}>
+                        <div><strong>Dosage:</strong> {rem.dosage}</div>
+                        <div><strong>Schedule:</strong> Every {rem.frequency_hours} hours</div>
+                      </div>
+                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", fontSize: "12px", color: "var(--text-muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {isTaken ? (
+                          <div>
+                            <div>Completed dose at:</div>
+                            <strong>{takenReminders[rem.id]}</strong>
+                          </div>
+                        ) : (
+                          <div>
+                            <div>Next Reminder Due:</div>
+                            <strong>{new Date(rem.next_due_at + "Z").toLocaleString()}</strong>
+                          </div>
+                        )}
+                        
+                        {!isTaken && (
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: "6px 12px", fontSize: "12px", height: "fit-content" }}
+                            onClick={() => handleMarkTaken(rem.id)}
+                          >
+                            <Icons.Check /> Mark Taken
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ fontSize: "14px", marginBottom: "12px" }}>
-                      <div><strong>Dosage:</strong> {rem.dosage}</div>
-                      <div><strong>Schedule:</strong> Every {rem.frequency_hours} hours</div>
-                    </div>
-                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", fontSize: "12px", color: "var(--text-muted)" }}>
-                      <div>Next Reminder Due:</div>
-                      <strong>{new Date(rem.next_due_at + "Z").toLocaleString()}</strong>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -956,7 +1023,7 @@ export default function App() {
               </div>
 
               {/* Symptom Input Form */}
-              <div className="card">
+              <div className="card" id="booking-details-form">
                 <h3>2. Complete Appointment Details</h3>
                 <form onSubmit={handleBookAppointment} style={{ marginTop: "16px" }}>
                   <div className="form-group">

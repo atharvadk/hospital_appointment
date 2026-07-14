@@ -360,12 +360,13 @@ a:hover {
   border: 1px solid var(--border);
   padding: 24px;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition);
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), border-color 0.4s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-6px) scale(1.008);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-color: rgba(59, 130, 246, 0.25);
 }
 
 .card-title {
@@ -386,19 +387,40 @@ a:hover {
   border-radius: var(--radius-full);
 }
 
+@keyframes pulse-glow-low {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes pulse-glow-medium {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+@keyframes pulse-glow-high {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 .badge-low {
   background-color: var(--success-light);
   color: var(--success);
+  animation: pulse-glow-low 2s infinite;
 }
 
 .badge-medium {
   background-color: var(--warning-light);
   color: var(--warning);
+  animation: pulse-glow-medium 2s infinite;
 }
 
 .badge-high {
   background-color: var(--danger-light);
   color: var(--danger);
+  animation: pulse-glow-high 1.5s infinite;
 }
 
 .badge-status-booked {
@@ -510,18 +532,29 @@ a:hover {
 }
 
 /* Modals */
+@keyframes modalOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentSlideIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: modalOverlayFadeIn 0.3s ease;
 }
 
 .modal-content {
@@ -530,10 +563,11 @@ a:hover {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 560px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid var(--border);
+  animation: modalContentSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-footer {
@@ -605,4 +639,49 @@ a:hover {
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: 12px;
+}
+
+/* Skeleton Loading Shimmer */
+.skeleton-line {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: 4px;
+  height: 16px;
+  margin-bottom: 8px;
+}
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 16px;
+}
+.skeleton-badge {
+  height: 20px;
+  width: 80px;
+  border-radius: 10px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Medication completed styling */
+.card-completed-pulse {
+  animation: completeFlash 0.6s ease;
+}
+
+@keyframes completeFlash {
+  0% { border-color: var(--secondary); background-color: var(--secondary-light); }
+  100% { border-color: var(--border); background-color: var(--bg-card); }
+}
+
+/* Smooth scale-in for lists */
+.animate-fade-in {
+  animation: listFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes listFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
